@@ -1,8 +1,6 @@
-// Grava src/environments/environment.prod.ts a partir da variável de ambiente API_URL.
-// Usado no build da Cloudflare Pages: API_URL=https://sua-api.up.railway.app
 import { writeFileSync } from 'node:fs';
 
-const base = (process.env.API_URL ?? 'http://localhost:8080').replace(/\/+$/, '');
+const base = (process.env.API_URL ?? 'https://cantina-api-514520320470.southamerica-east1.run.app/api').replace(/\/+$/, '');
 const apiUrl = base.endsWith('/api') ? base : `${base}/api`;
 const conteudo = `// Gerado automaticamente por scripts/set-env.mjs a partir da variável API_URL (npm run build).
 export const environment = {
