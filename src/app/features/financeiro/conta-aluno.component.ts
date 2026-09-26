@@ -119,7 +119,7 @@ export class ContaAlunoComponent {
   buscar(termo: string) {
     this.busca.set(termo);
     if (termo.trim().length < 2) { this.encontrados.set([]); return; }
-    this.cadastros.alunos({ nome: termo.trim(), apenasAtivos: false }).subscribe(l => this.encontrados.set(l.slice(0, 8)));
+    this.cadastros.alunos({ nome: termo.trim(), apenasAtivos: false, size: 8 }).subscribe(p => this.encontrados.set(p.content));
   }
 
   selecionar(a: Aluno) {

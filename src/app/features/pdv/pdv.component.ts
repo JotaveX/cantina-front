@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CadastrosApi, OperacoesApi } from '../../core/api.service';
 import { Aluno, FormaPagamento, Produto, Venda } from '../../core/models';
@@ -21,7 +21,7 @@ interface ItemCarrinho { produto: Produto; quantidade: number; }
         <button class="btn" (click)="limparTudo()" [disabled]="!aluno() && carrinho().length === 0">Limpar</button>
       </div>
 
-      <app-scanner-input [grande]="true" (lido)="ler($event)"
+      <app-scanner-input [grande]="true" [pausaMs]="600" (lido)="ler($event)" (pausa)="identificarAoPausar($event)"
         [placeholder]="aluno() ? 'Leia um produto ou outra carteirinha' : 'Leia a carteirinha do aluno'" />
 
       <div class="pdv-grid mt">
@@ -116,7 +116,7 @@ interface ItemCarrinho { produto: Produto; quantidade: number; }
 
       @if (ultimaVenda(); as v) {
         <div class="alert alert-info mt row-between">
-          <span>Ficha <strong>#{{ v.id }}</strong> registrada para <strong>{{ v.alunoNome }}</strong>: {{ v.valorTotal | dinheiro }} ({{ v.formaPagamento === 'FIADO' ? 'fiado' : 'pago na hora' }}). Retire no balcão lendo a carteirinha.</span>
+          <span>Ficha <strong>#{{ v.id }}</strong> registrada para <strong>{{ v.alunoNome }}</strong>: {{ v.valorTotal | dinheiro }} ({{ v.formaPagamento === 'FIADO' ? 'fiado' : 'pago na hora' }}). Entregue ao aluno uma ficha para cada produto.</span>
           <button class="btn btn-sm" (click)="ultimaVenda.set(null)">Ok</button>
         </div>
       }
@@ -152,6 +152,7 @@ export class PdvComponent {
   private cadastros = inject(CadastrosApi);
   private operacoes = inject(OperacoesApi);
   private toast = inject(ToastService);
+  private scanner = viewChild.required(ScannerInputComponent);
 
   produtos = signal<Produto[]>([]);
   carregandoProdutos = signal(true);
@@ -208,6 +209,25 @@ export class PdvComponent {
     });
   }
 
+  /**
+   * Digitação manual: ao parar de digitar, procura a carteirinha em silêncio. Se achar, identifica o aluno
+   * sem precisar de Enter; se não achar, não faz nada (o erro só aparece no Enter / "Ler").
+   */
+  identificarAoPausar(codigo: string) {
+    if (this.aluno()?.codigoBarras === codigo) return;
+    this.cadastros.alunoPorCodigo(codigo, true).subscribe({
+      next: a => {
+        // Ignora se o campo mudou enquanto a busca estava em andamento (continuou digitando ou deu Enter)
+        if (this.scanner().valor().trim() !== codigo || !a.ativo) return;
+        const trocou = !!this.aluno();
+        this.selecionarAluno(a);
+        this.scanner().limpar();
+        if (trocou) this.toast.info(`Aluno trocado para ${a.nome}.`);
+      },
+      error: () => {},
+    });
+  }
+
   selecionarAluno(a: Aluno) {
     if (!a.ativo) { this.toast.erro(`${a.nome} está desativado.`); return; }
     this.aluno.set(a);
@@ -221,7 +241,7 @@ export class PdvComponent {
   buscarAlunos(termo: string) {
     this.buscaAluno.set(termo);
     if (termo.trim().length < 2) { this.alunosEncontrados.set([]); return; }
-    this.cadastros.alunos({ nome: termo.trim(), apenasAtivos: true }).subscribe(l => this.alunosEncontrados.set(l.slice(0, 8)));
+    this.cadastros.alunos({ nome: termo.trim(), apenasAtivos: true, size: 8 }).subscribe(p => this.alunosEncontrados.set(p.content));
   }
 
   adicionar(p: Produto) {

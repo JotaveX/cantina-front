@@ -2,10 +2,8 @@ import { Component, computed, input } from '@angular/core';
 import { StatusVenda, FormaPagamento, TipoLancamento } from '../core/models';
 
 const ROTULOS: Record<string, { texto: string; classe: string }> = {
-  PENDENTE: { texto: 'Pendente', classe: 'badge-amber' },
-  RETIRADO_PARCIAL: { texto: 'Parcial', classe: 'badge-amber' },
-  RETIRADO: { texto: 'Retirado', classe: 'badge-green' },
-  CANCELADO: { texto: 'Cancelado', classe: 'badge-red' },
+  CONCLUIDA: { texto: 'Concluída', classe: 'badge-green' },
+  CANCELADA: { texto: 'Cancelada', classe: 'badge-red' },
   FIADO: { texto: 'Fiado', classe: 'badge-amber' },
   PAGO_NA_HORA: { texto: 'Pago', classe: 'badge-green' },
   CREDITO: { texto: 'Crédito', classe: 'badge-green' },

@@ -27,11 +27,20 @@ interface Grupo { titulo: string; itens: Item[]; }
           }
         </nav>
         <div class="usuario">
-          <div class="nome">{{ auth.usuario()?.nome }}</div>
-          <div class="perfil">{{ auth.admin() ? 'Administrador' : 'Operador' }}</div>
-          <div class="row" style="margin-top:8px">
-            <button class="btn btn-sm btn-ghost" (click)="auth.logout()">Sair</button>
+          <div class="info">
+            <div class="nome">{{ auth.usuario()?.nome }}</div>
+            <div class="perfil">{{ auth.admin() ? 'Administrador' : 'Operador' }}</div>
           </div>
+          @if (auth.admin()) {
+            <a class="btn btn-sm btn-ghost engrenagem" routerLink="/configuracoes" routerLinkActive="ativo" (click)="menuAberto.set(false)"
+               title="Configurações" aria-label="Configurações">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            </a>
+          }
+          <button class="btn btn-sm btn-ghost" (click)="auth.logout()">Sair</button>
         </div>
       </aside>
       <div class="conteudo">
@@ -55,7 +64,11 @@ interface Grupo { titulo: string; itens: Item[]; }
     nav a { display: block; padding: 7px 10px; border-radius: 6px; color: #cbe4f0; text-decoration: none; font-weight: 500; font-size: 0.9375rem; }
     nav a:hover { background: rgba(255,255,255,.08); color: #fff; }
     nav a.ativo { background: var(--fresh-sky); color: #fff; font-weight: 700; }
-    .usuario { padding: 12px 20px 14px; border-top: 1px solid rgba(255,255,255,.12); font-size: 0.9rem; }
+    .usuario { display: flex; align-items: center; gap: 6px; padding: 12px 14px 14px 20px; border-top: 1px solid rgba(255,255,255,.12); font-size: 0.9rem; }
+    .usuario .info { flex: 1; min-width: 0; }
+    .usuario .nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .usuario .engrenagem { padding-left: 6px; padding-right: 6px; display: inline-flex; align-items: center; }
+    .usuario .engrenagem.ativo { background: var(--fresh-sky); border-color: var(--fresh-sky); color: #fff; }
     .usuario .nome { font-weight: 600; color: #fff; }
     .usuario .perfil { color: #7fb3cc; font-size: 0.8125rem; }
     .usuario .btn-ghost { color: #cbe4f0; border-color: rgba(255,255,255,.2); text-decoration: none; }
@@ -78,8 +91,8 @@ export class ShellComponent {
   private todos: Grupo[] = [
     { titulo: 'Operação', itens: [
       { rota: '/pdv', texto: 'Ponto de venda' },
-      { rota: '/retirada', texto: 'Retirada no balcão' },
-      { rota: '/dashboard', texto: 'Painel do dia', admin: true },
+      { rota: '/conferencia', texto: 'Conferência de fichas' },
+      { rota: '/dashboard', texto: 'Painel', admin: true },
     ] },
     { titulo: 'Cadastros', itens: [
       { rota: '/alunos', texto: 'Alunos' },
@@ -97,6 +110,11 @@ export class ShellComponent {
       { rota: '/conta', texto: 'Conta do aluno', admin: true },
       { rota: '/vendas', texto: 'Vendas', admin: true },
       { rota: '/relatorios', texto: 'Relatórios' },
+    ] },
+    { titulo: 'Documentos', itens: [
+      { rota: '/documentos/consumo', texto: 'Consumo do aluno', admin: true },
+      { rota: '/documentos/bilhetes', texto: 'Bilhetes de cobrança', admin: true },
+      { rota: '/documentos/carteirinhas', texto: 'Carteirinhas' },
     ] },
   ];
 

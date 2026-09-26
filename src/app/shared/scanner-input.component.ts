@@ -1,8 +1,10 @@
-import { Component, ElementRef, effect, input, output, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, effect, inject, input, output, signal, viewChild } from '@angular/core';
 
 /**
  * Campo de leitura para o leitor de código de barras (USB/HID, que "digita" o código e um Enter).
  * Mantém o foco, emite o valor no Enter e limpa o campo. Também aceita digitação manual.
+ * Com `pausaMs` > 0, emite `pausa` com o valor atual quando o operador para de digitar por esse tempo
+ * (o leitor digita e manda Enter antes disso, então só a digitação manual dispara).
  */
 @Component({
   selector: 'app-scanner-input',
@@ -13,7 +15,7 @@ import { Component, ElementRef, effect, input, output, signal, viewChild } from 
       </svg>
       <input #campo type="text" autocomplete="off" spellcheck="false" inputmode="numeric"
              [placeholder]="placeholder()" [value]="valor()" [disabled]="desabilitado()"
-             (input)="valor.set(campo.value)" (keydown.enter)="enviar($event)" (blur)="refocar()" />
+             (input)="digitou(campo.value)" (keydown.enter)="enviar($event)" (blur)="refocar()" />
       @if (valor()) {
         <button type="button" class="btn btn-sm" (click)="enviar()">Ler</button>
       }
@@ -34,15 +36,36 @@ export class ScannerInputComponent {
   desabilitado = input(false);
   /** Mantém o foco no campo mesmo quando o operador clica fora (útil no PDV/balcão). */
   manterFoco = input(true);
+  /** Tempo sem digitar (ms) para emitir `pausa`; 0 desativa. */
+  pausaMs = input(0);
   lido = output<string>();
+  pausa = output<string>();
 
   valor = signal('');
   private campo = viewChild.required<ElementRef<HTMLInputElement>>('campo');
+  private timerPausa?: ReturnType<typeof setTimeout>;
 
   constructor() {
     effect(() => {
       if (!this.desabilitado()) this.focar();
     });
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.timerPausa));
+  }
+
+  digitou(texto: string) {
+    this.valor.set(texto);
+    clearTimeout(this.timerPausa);
+    const codigo = texto.trim();
+    if (this.pausaMs() > 0 && codigo) {
+      this.timerPausa = setTimeout(() => this.pausa.emit(codigo), this.pausaMs());
+    }
+  }
+
+  /** Limpa o campo sem emitir nada (ex.: quando a pausa já resolveu o código). */
+  limpar() {
+    clearTimeout(this.timerPausa);
+    this.valor.set('');
+    this.focar();
   }
 
   focar() {
@@ -53,6 +76,7 @@ export class ScannerInputComponent {
     ev?.preventDefault();
     const codigo = this.valor().trim();
     if (!codigo) return;
+    clearTimeout(this.timerPausa);
     this.valor.set('');
     this.lido.emit(codigo);
     this.focar();

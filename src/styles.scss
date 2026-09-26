@@ -185,4 +185,25 @@ table.table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
 .ficha-item.done { color: var(--muted); text-decoration: line-through; }
 .ficha-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 16px; border-top: 1.5px dashed var(--paper-line); background: rgba(255,255,255,.4); }
 
+/* ---------- impressão ---------- */
+/* grupo de botões de escolha única (ex.: escola toda / uma turma / um aluno) */
+.segmentos { display: flex; }
+.segmentos .btn { border-radius: 0; margin-left: -1px; }
+.segmentos .btn:first-child { border-radius: var(--radius) 0 0 var(--radius); margin-left: 0; }
+.segmentos .btn:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
+.segmentos .btn.ativo { background: var(--primary); border-color: var(--primary); color: #fff; position: relative; }
+
+.so-impressao { display: none; }
+@media print {
+  @page { size: A4; margin: 10mm; }
+  body { background: #fff; }
+  .sidebar, .topo, .tabs, .filters, .page-head .btn, app-toasts, .no-print { display: none !important; }
+  .shell { display: block !important; }
+  .page { padding: 0 !important; max-width: none !important; }
+  .so-impressao { display: block; }
+  .card, .table-wrap { box-shadow: none; }
+  .table th, .table td { padding: 5px 8px; }
+  a { color: inherit; text-decoration: none; }
+}
+
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }

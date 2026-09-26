@@ -3,9 +3,9 @@ import { SILENCIAR_ERRO } from './http-context';
 import { Injectable, inject } from '@angular/core';
 import { environment } from '../../environments/environment';
 import {
-  Aluno, Baixa, Carteirinha, Categoria, Compra, Dashboard, EmAtraso, Extrato, FechamentoMensal, FichaProduto, Fornecedor,
-  Lancamento, MotivoBaixa, Page, Produto, Reconciliacao, RelatorioEstoque, Sobras, StatusVenda, FormaPagamento, TipoLancamento,
-  Turma, Usuario, Venda, VendaRequest, VendasPeriodo,
+  Aluno, AlunoTrocaAno, Baixa, BilhetesCobranca, Carteirinha, Categoria, Compra, ConferenciaFichas, Configuracao, ConsumoAluno, Dashboard, EmAtraso, Extrato, FechamentoMensal, FichaProduto, Fornecedor,
+  Lancamento, MotivoBaixa, Page, Produto, Reconciliacao, RelatorioEstoque, ResumoConferencia, Sobras, StatusVenda, FormaPagamento, Tendencias, TipoLancamento,
+  TrocaAnoRequest, TrocaAnoResultado, Turma, Usuario, Venda, VendaRequest, VendasPeriodo,
 } from './models';
 
 /** Monta HttpParams ignorando valores vazios. */
@@ -28,8 +28,14 @@ export class CadastrosApi {
   salvarTurma(t: Partial<Turma>) { return t.id ? this.http.put<Turma>(`${API}/turmas/${t.id}`, t) : this.http.post<Turma>(`${API}/turmas`, t); }
   desativarTurma(id: number) { return this.http.delete<void>(`${API}/turmas/${id}`); }
 
+  // Troca de ano
+  alunosTrocaAno() { return this.http.get<AlunoTrocaAno[]>(`${API}/troca-de-ano/alunos`); }
+  aplicarTrocaAno(req: TrocaAnoRequest) { return this.http.post<TrocaAnoResultado>(`${API}/troca-de-ano`, req); }
+
   // Alunos
-  alunos(f: { nome?: string; turmaId?: number | null; apenasAtivos?: boolean }) { return this.http.get<Aluno[]>(`${API}/alunos`, { params: params(f) }); }
+  alunos(f: { nome?: string; turmaId?: number | null; apenasAtivos?: boolean; page?: number; size?: number }) {
+    return this.http.get<Page<Aluno>>(`${API}/alunos`, { params: params(f) });
+  }
   aluno(id: number) { return this.http.get<Aluno>(`${API}/alunos/${id}`); }
   alunoPorCodigo(codigo: string, silencioso = false) {
     return this.http.get<Aluno>(`${API}/alunos/codigo/${encodeURIComponent(codigo)}`, { context: new HttpContext().set(SILENCIAR_ERRO, silencioso) });
@@ -60,6 +66,10 @@ export class CadastrosApi {
   salvarUsuario(u: Partial<Usuario> & { senha?: string }) { return u.id ? this.http.put<Usuario>(`${API}/usuarios/${u.id}`, u) : this.http.post<Usuario>(`${API}/usuarios`, u); }
   desativarUsuario(id: number) { return this.http.delete<void>(`${API}/usuarios/${id}`); }
   trocarSenha(senhaAtual: string, novaSenha: string) { return this.http.post<void>(`${API}/auth/trocar-senha`, { senhaAtual, novaSenha }); }
+
+  // Configurações (dia de fechamento, texto do bilhete)
+  configuracao() { return this.http.get<Configuracao>(`${API}/configuracoes`); }
+  salvarConfiguracao(c: { diaFechamento: number; instrucoesPagamento?: string }) { return this.http.put<Configuracao>(`${API}/configuracoes`, c); }
 }
 
 @Injectable({ providedIn: 'root' })
@@ -74,10 +84,11 @@ export class OperacoesApi {
   venda(id: number) { return this.http.get<Venda>(`${API}/vendas/${id}`); }
   cancelarVenda(id: number, motivo: string) { return this.http.post<Venda>(`${API}/vendas/${id}/cancelar`, { motivo }); }
 
-  // Retirada
-  pendentes(f: { codigoBarras?: string; alunoId?: number }) { return this.http.get<Venda[]>(`${API}/vendas/pendentes`, { params: params(f) }); }
-  retirarPedido(id: number) { return this.http.post<Venda>(`${API}/vendas/${id}/retirar`, {}); }
-  retirarItem(id: number, itemId: number) { return this.http.post<Venda>(`${API}/vendas/${id}/itens/${itemId}/retirar`, {}); }
+  // Conferência de fichas (secretaria)
+  resumoConferencia(data: string) { return this.http.get<ResumoConferencia>(`${API}/conferencias-fichas/resumo`, { params: params({ data }) }); }
+  registrarConferencia(req: { data: string; dinheiroContado?: number | null; observacao?: string; itens: { produtoId: number; quantidadeRecolhida: number }[] }) {
+    return this.http.post<ConferenciaFichas>(`${API}/conferencias-fichas`, req);
+  }
 
   // Estoque
   compras(inicio: string, fim: string) { return this.http.get<Compra[]>(`${API}/compras`, { params: params({ inicio, fim }) }); }
@@ -105,9 +116,14 @@ export class RelatoriosApi {
   private http = inject(HttpClient);
 
   dashboard() { return this.http.get<Dashboard>(`${API}/dashboard`); }
+  tendencias() { return this.http.get<Tendencias>(`${API}/dashboard/tendencias`); }
   carteirinhas(turmaId?: number | null, apenasAtivos = true) { return this.http.get<Carteirinha[]>(`${API}/relatorios/carteirinhas`, { params: params({ turmaId, apenasAtivos }) }); }
   emAtraso() { return this.http.get<EmAtraso>(`${API}/relatorios/em-atraso`); }
   fechamentoMensal(ano: number, mes: number, apenasEmAberto = true) { return this.http.get<FechamentoMensal>(`${API}/relatorios/fechamento-mensal`, { params: params({ ano, mes, apenasEmAberto }) }); }
+  bilhetesCobranca(ano: number, mes: number, escopo: { turmaId?: number | null; alunoId?: number | null }) {
+    return this.http.get<BilhetesCobranca>(`${API}/relatorios/bilhetes-cobranca`, { params: params({ ano, mes, ...escopo }) });
+  }
+  consumoAluno(alunoId: number, ano: number, mes: number) { return this.http.get<ConsumoAluno>(`${API}/relatorios/consumo-aluno/${alunoId}`, { params: params({ ano, mes }) }); }
   estoque(apenasBaixo = false, categoriaId?: number | null) { return this.http.get<RelatorioEstoque>(`${API}/relatorios/estoque`, { params: params({ apenasBaixo, categoriaId }) }); }
   vendasPeriodo(inicio: string, fim: string) { return this.http.get<VendasPeriodo>(`${API}/relatorios/vendas-periodo`, { params: params({ inicio, fim }) }); }
   fichasProdutos(inicio: string, fim: string) { return this.http.get<FichaProduto[]>(`${API}/relatorios/fichas-produtos`, { params: params({ inicio, fim }) }); }

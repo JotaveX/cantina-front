@@ -7,7 +7,7 @@ import { AuthService } from '../../core/auth.service';
   imports: [RouterLink, RouterLinkActive, RouterOutlet],
   template: `
     <div class="page">
-      <div class="page-head"><div><h1>Relatórios</h1></div><button class="btn" onclick="window.print()">Imprimir</button></div>
+      <div class="page-head no-print"><div><h1>Relatórios</h1></div><button class="btn" onclick="window.print()">Imprimir</button></div>
       <nav class="tabs">
         @for (t of abas(); track t.rota) { <a [routerLink]="t.rota" routerLinkActive="active">{{ t.texto }}</a> }
       </nav>
@@ -20,7 +20,6 @@ export class RelatoriosComponent {
   private todas = [
     { rota: 'estoque', texto: 'Estoque' },
     { rota: 'fichas', texto: 'Fichas por produto' },
-    { rota: 'carteirinhas', texto: 'Carteirinhas' },
     { rota: 'reconciliacao', texto: 'Reconciliação', admin: true },
     { rota: 'vendas-periodo', texto: 'Vendas por período', admin: true },
     { rota: 'em-atraso', texto: 'Em atraso', admin: true },

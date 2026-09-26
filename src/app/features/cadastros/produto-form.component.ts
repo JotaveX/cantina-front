@@ -27,6 +27,9 @@ import { MascaraDataDirective } from '../../shared/mascara-data.directive';
             </select></div>
           <div class="field"><label>Preço de venda (R$)</label><input class="input" type="number" step="0.01" min="0" formControlName="preco" />
             @if (form.controls.preco.touched && form.controls.preco.invalid) { <span class="error">Informe um preço válido.</span> }</div>
+          <div class="field"><label>Custo unitário (R$, opcional)</label><input class="input" type="number" step="0.01" min="0" formControlName="custo" />
+            @if (form.controls.custo.touched && form.controls.custo.invalid) { <span class="error">Informe um custo válido.</span> }
+            @else { <span class="hint">Atualizado automaticamente a cada entrada de estoque. Usado no cálculo da margem.</span> }</div>
           <div class="field"><label>Código de barras (opcional)</label><input class="input" formControlName="codigoBarras" placeholder="Leia a etiqueta com o leitor" />
             <span class="hint">Permite adicionar o produto no PDV pelo leitor.</span></div>
           <div class="field"><label>Estoque mínimo</label><input class="input" type="number" min="0" formControlName="estoqueMinimo" />
@@ -75,6 +78,7 @@ export class ProdutoFormComponent {
     categoriaId: [null as number | null],
     codigoBarras: [''],
     preco: [null as number | null, [Validators.required, Validators.min(0)]],
+    custo: [null as number | null, Validators.min(0)],
     quantidadeEstoque: [0, Validators.min(0)],
     estoqueMinimo: [0, Validators.min(0)],
     validade: ['', this.dataBrValidator()],
@@ -89,7 +93,7 @@ export class ProdutoFormComponent {
   private carregar(id: number) {
     this.api.produto(id).subscribe(p => {
       this.produto.set(p);
-      this.form.patchValue({ nome: p.nome, categoriaId: p.categoriaId ?? null, codigoBarras: p.codigoBarras ?? '', preco: p.preco,
+      this.form.patchValue({ nome: p.nome, categoriaId: p.categoriaId ?? null, codigoBarras: p.codigoBarras ?? '', preco: p.preco, custo: p.custo ?? null,
         quantidadeEstoque: p.quantidadeEstoque, estoqueMinimo: p.estoqueMinimo, ativo: p.ativo, validade: this.converterParaBr(p.validade) });
     });
   }
@@ -100,7 +104,8 @@ export class ProdutoFormComponent {
     const v = this.form.getRawValue();
     console.log('salvar', v);
     this.api.salvarProduto({ id: this.id() ? Number(this.id()) : undefined, nome: v.nome!, categoriaId: v.categoriaId ?? undefined,
-      codigoBarras: v.codigoBarras || undefined, preco: Number(v.preco), quantidadeEstoque: v.quantidadeEstoque ?? 0,
+      codigoBarras: v.codigoBarras || undefined, preco: Number(v.preco),
+      custo: v.custo === null || v.custo === undefined || (v.custo as unknown) === '' ? undefined : Number(v.custo), quantidadeEstoque: v.quantidadeEstoque ?? 0,
       estoqueMinimo: v.estoqueMinimo ?? 0, ativo: v.ativo ?? true, validade: this.converterParaISO(v.validade) ?? ''
        })
       .subscribe({ next: () => { this.toast.sucesso('Produto salvo'); this.router.navigate(['/produtos']); }, error: () => this.salvando.set(false) });

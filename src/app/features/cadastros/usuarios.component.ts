@@ -11,7 +11,7 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
   imports: [ReactiveFormsModule, DatePipe, StatusBadgeComponent],
   template: `
     <div class="page" style="max-width: 980px">
-      <div class="page-head"><div><h1>Usuários</h1><p>Administradores têm acesso total. Operadores fazem cadastros, vendas, retiradas e estoque.</p></div></div>
+      <div class="page-head"><div><h1>Usuários</h1><p>Administradores têm acesso total. Operadores fazem cadastros, vendas, conferência de fichas e estoque.</p></div></div>
       <form class="card card-tight mb" [formGroup]="form" (ngSubmit)="salvar()">
         <div class="form-grid" style="grid-template-columns: 2fr 1.5fr 1.5fr 1fr">
           <div class="field"><label>Nome</label><input class="input" formControlName="nome" /></div>

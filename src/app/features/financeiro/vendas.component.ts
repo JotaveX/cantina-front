@@ -13,13 +13,13 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
   imports: [FormsModule, DatePipe, DinheiroPipe, StatusBadgeComponent],
   template: `
     <div class="page">
-      <div class="page-head"><div><h1>Vendas</h1><p>Todas as fichas emitidas. Pedidos ainda pendentes podem ser cancelados, devolvendo estoque e saldo.</p></div></div>
+      <div class="page-head"><div><h1>Vendas</h1><p>Todas as vendas do PDV. Cancelar uma venda devolve o estoque e, se foi fiado, estorna o saldo.</p></div></div>
       <div class="filters">
         <div class="field"><label>De</label><input class="input" type="date" [ngModel]="inicio()" (ngModelChange)="inicio.set($event); carregar(0)" /></div>
         <div class="field"><label>Até</label><input class="input" type="date" [ngModel]="fim()" (ngModelChange)="fim.set($event); carregar(0)" /></div>
         <div class="field"><label>Status</label>
           <select class="input" [ngModel]="status()" (ngModelChange)="status.set($event); carregar(0)">
-            <option value="">Todos</option><option value="PENDENTE">Pendente</option><option value="RETIRADO_PARCIAL">Parcial</option><option value="RETIRADO">Retirado</option><option value="CANCELADO">Cancelado</option></select></div>
+            <option value="">Todos</option><option value="CONCLUIDA">Concluída</option><option value="CANCELADA">Cancelada</option></select></div>
         <div class="field"><label>Forma</label>
           <select class="input" [ngModel]="forma()" (ngModelChange)="forma.set($event); carregar(0)">
             <option value="">Todas</option><option value="FIADO">Fiado</option><option value="PAGO_NA_HORA">Pago na hora</option></select></div>
@@ -33,11 +33,11 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
                 <td>#{{ v.id }}</td><td>{{ v.dataHora | date:'dd/MM HH:mm' }}</td><td>{{ v.alunoNome }} <span class="muted small">{{ v.alunoTurma || '' }}</span></td>
                 <td><app-badge [valor]="v.formaPagamento" /></td><td><app-badge [valor]="v.status" /></td>
                 <td class="num">{{ v.valorTotal | dinheiro }}</td><td>{{ v.operadorNome || '—' }}</td>
-                <td class="actions">@if (v.status === 'PENDENTE') { <button class="btn btn-sm btn-danger" (click)="cancelar(v); $event.stopPropagation()">Cancelar</button> }</td>
+                <td class="actions">@if (v.status === 'CONCLUIDA') { <button class="btn btn-sm btn-danger" (click)="cancelar(v); $event.stopPropagation()">Cancelar</button> }</td>
               </tr>
               @if (aberta()?.id === v.id) {
                 <tr><td colspan="8" style="background: var(--surface-2)">
-                  @for (i of aberta()!.itens; track i.id) { <div class="row-between small" style="padding:4px 8px"><span>{{ i.quantidade }}× {{ i.nomeProduto }} {{ i.retirado ? '(entregue)' : '' }}</span><span class="num">{{ i.subtotal | dinheiro }}</span></div> }
+                  @for (i of aberta()!.itens; track i.id) { <div class="row-between small" style="padding:4px 8px"><span>{{ i.quantidade }}× {{ i.nomeProduto }}</span><span class="num">{{ i.subtotal | dinheiro }}</span></div> }
                   @if (aberta()!.motivoCancelamento) { <div class="small muted" style="padding:4px 8px">Motivo do cancelamento: {{ aberta()!.motivoCancelamento }}</div> }
                 </td></tr>
               }

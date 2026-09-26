@@ -32,10 +32,10 @@ import { DinheiroPipe } from '../../shared/dinheiro.pipe';
           </div>
           <div class="field"><label>Código de barras da carteirinha</label>
             <div class="row" style="flex-wrap: nowrap">
-              <input class="input" formControlName="codigoBarras" placeholder="Gerado automaticamente" />
-              @if (id()) { <button type="button" class="btn" (click)="reemitir()">Reemitir</button> }
+              <input class="input" formControlName="codigoBarras" placeholder="Gerado ao salvar" readonly />
+              @if (id()) { <button type="button" class="btn" (click)="reemitir()">Restaurar padrão</button> }
             </div>
-            <span class="hint">Pode ler a etiqueta com o leitor com o cursor neste campo.</span>
+            <span class="hint">Sempre AL + número do aluno (ex.: AL1127), gerado pelo sistema.</span>
           </div>
           <div class="field"><label>Responsável</label><input class="input" formControlName="responsavelNome" /></div>
           <div class="field"><label>Contato do responsável</label><input class="input" formControlName="responsavelContato" placeholder="Telefone ou e-mail" /></div>
@@ -68,7 +68,7 @@ export class AlunoFormComponent {
     responsavelNome: [''],
     responsavelContato: [''],
     ativo: [true],
-    permiteSaldoNegativo: [false],
+    permiteSaldoNegativo: [true],
   });
 
   constructor() {
@@ -90,7 +90,7 @@ export class AlunoFormComponent {
     this.salvando.set(true);
     const v = this.form.getRawValue();
     this.api.salvarAluno({ id: this.id() ? Number(this.id()) : undefined, nome: v.nome!, turmaId: v.turmaId ?? undefined,
-      codigoBarras: v.codigoBarras || undefined, responsavelNome: v.responsavelNome || undefined,
+      responsavelNome: v.responsavelNome || undefined,
       responsavelContato: v.responsavelContato || undefined, ativo: v.ativo ?? true,
       permiteSaldoNegativo: v.permiteSaldoNegativo ?? false })
       .subscribe({
@@ -100,10 +100,9 @@ export class AlunoFormComponent {
   }
 
   reemitir() {
-    if (!confirm('Gerar um novo código de barras? O código atual deixa de funcionar.')) return;
     this.api.reemitirCodigo(Number(this.id())).subscribe(a => {
       this.form.patchValue({ codigoBarras: a.codigoBarras });
-      this.toast.sucesso(`Novo código: ${a.codigoBarras}`);
+      this.toast.sucesso(`Código restaurado: ${a.codigoBarras}`);
     });
   }
 }

@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { CadastrosApi } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
-import { Aluno, Turma } from '../../core/models';
+import { Aluno, Page, Turma } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
 import { DinheiroPipe } from '../../shared/dinheiro.pipe';
 
@@ -13,7 +13,6 @@ import { DinheiroPipe } from '../../shared/dinheiro.pipe';
   template: `
     <div class="page">
       <div class="page-head">
-        <div><h1>Alunos</h1><p>Cada aluno tem uma carteirinha com código de barras e um saldo único (crédito ou fiado).</p></div>
         <a routerLink="/alunos/novo" class="btn btn-primary">Novo aluno</a>
       </div>
       <div class="filters">
@@ -30,7 +29,7 @@ import { DinheiroPipe } from '../../shared/dinheiro.pipe';
         <table class="table">
           <thead><tr><th>Nome</th><th>Turma</th><th>Carteirinha</th><th class="num">Saldo</th><th>Responsável</th><th></th></tr></thead>
           <tbody>
-            @for (a of alunos(); track a.id) {
+            @for (a of pagina()?.content; track a.id) {
               <tr [class.muted]="!a.ativo">
                 <td><a [routerLink]="['/alunos', a.id]">{{ a.nome }}</a>{{ a.ativo ? '' : ' (desativado)' }}</td>
                 <td>{{ a.turmaNome || '—' }}</td>
@@ -48,6 +47,14 @@ import { DinheiroPipe } from '../../shared/dinheiro.pipe';
           </tbody>
         </table>
       </div>
+      @if (pagina(); as p) {
+        <div class="row mt">
+          <span class="muted small">{{ p.totalElements }} aluno(s)</span><span class="spacer"></span>
+          <button class="btn btn-sm" [disabled]="p.number === 0" (click)="carregar(p.number - 1)">Anterior</button>
+          <span class="small">Página {{ p.number + 1 }} de {{ p.totalPages || 1 }}</span>
+          <button class="btn btn-sm" [disabled]="p.number + 1 >= p.totalPages" (click)="carregar(p.number + 1)">Próxima</button>
+        </div>
+      }
     </div>
   `,
 })
@@ -55,7 +62,7 @@ export class AlunosComponent {
   private api = inject(CadastrosApi);
   private toast = inject(ToastService);
   auth = inject(AuthService);
-  alunos = signal<Aluno[]>([]);
+  pagina = signal<Page<Aluno> | null>(null);
   turmas = signal<Turma[]>([]);
   nome = signal('');
   turmaId = signal<number | null>(null);
@@ -68,12 +75,15 @@ export class AlunosComponent {
     this.buscar();
   }
 
+  /** Filtro mudou: volta para a primeira página (com debounce para a digitação do nome). */
   buscar() {
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => {
-      this.carregando.set(true);
-      this.api.alunos({ nome: this.nome(), turmaId: this.turmaId(), apenasAtivos: this.apenasAtivos() })
-        .subscribe({ next: l => { this.alunos.set(l); this.carregando.set(false); }, error: () => this.carregando.set(false) });
-    }, 250);
+    this.timer = setTimeout(() => this.carregar(0), 250);
+  }
+
+  carregar(page: number) {
+    this.carregando.set(true);
+    this.api.alunos({ nome: this.nome(), turmaId: this.turmaId(), apenasAtivos: this.apenasAtivos(), page, size: 50 })
+      .subscribe({ next: p => { this.pagina.set(p); this.carregando.set(false); }, error: () => this.carregando.set(false) });
   }
 }
