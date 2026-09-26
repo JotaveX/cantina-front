@@ -113,26 +113,27 @@ await scanner.fill('000000000000'); await scanner.press('Enter');
 await page.getByText(/não encontrado/).waitFor();
 check(true, 'código inexistente mostra erro');
 
-// Retirada
-await page.click('a[href="/retirada"]');
-await page.waitForURL(/\/retirada/);
-const sc2 = page.locator('app-scanner-input input');
-await sc2.fill(ana.codigoBarras); await sc2.press('Enter');
-await page.locator('.ficha').first().waitFor();
-await shot('05-retirada');
-const nFichas = await page.locator('.ficha').count();
-check(nFichas >= 1, `retirada lista ${nFichas} ficha(s) da Ana`);
-await page.locator('.ficha').first().locator('.ficha-item button', { hasText: 'Entregar' }).first().click();
-await page.locator('.ficha').first().getByText('Parcial').waitFor();
-check(true, 'entrega por item -> status Parcial');
-await page.locator('.ficha').first().getByRole('button', { name: 'Entregar ficha inteira' }).click();
-await page.getByText(/entregue/).first().waitFor();
-await page.waitForTimeout(500);
-const btnTodas = page.getByRole('button', { name: 'Entregar todas' });
-if (await btnTodas.isVisible().catch(() => false)) await btnTodas.click({ timeout: 3000 }).catch(() => {});
-await page.getByText('Nada pendente').waitFor();
-check(true, 'entrega da ficha inteira / todas -> nada pendente');
-await shot('06-retirada-vazia');
+// Conferência de fichas (secretaria): conta as fichas físicas recolhidas e o dinheiro do caixa
+await page.click('a[href="/conferencia"]');
+await page.waitForURL(/\/conferencia/);
+await page.locator('table.table tbody tr').first().waitFor();
+const resumo = await api(token, 'GET', '/conferencias-fichas/resumo');
+const dinheiroTela = (await page.locator('.stat .value').first().innerText()).replace(/\u00a0/g, ' ');
+const dinheiroApi = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(resumo.dinheiroEsperado).replace(/\u00a0/g, ' ');
+check(dinheiroTela === dinheiroApi, `dinheiro esperado na tela = ${dinheiroTela} (API: ${dinheiroApi})`);
+const linhas = page.locator('table.table').first().locator('tbody tr');
+const nLinhas = await linhas.count();
+for (let i = 0; i < nLinhas; i++) {
+  const vendidas = await linhas.nth(i).locator('td').nth(1).innerText();
+  await linhas.nth(i).locator('input').fill(i === 0 ? String(Math.max(Number(vendidas) - 1, 0)) : vendidas);
+}
+await page.locator('input[placeholder="0,00"]').fill(String(resumo.dinheiroEsperado));
+await shot('05-conferencia');
+await page.getByRole('button', { name: 'Salvar conferência' }).click();
+await page.getByText(/Conferência salva com divergência/).waitFor();
+await page.getByText('Divergente').first().waitFor();
+check(true, `conferência com 1 ficha faltando fica divergente (${nLinhas} produto(s) conferidos)`);
+await shot('06-conferencia-salva');
 
 // Conta do aluno: extrato + crédito
 await page.click('a[href="/conta"]');
@@ -177,6 +178,7 @@ await page.fill('#login', 'operador'); await page.fill('#senha', 'operador123');
 await page.click('button[type=submit]');
 await page.waitForURL(/\/pdv/);
 check(await page.locator('a[href="/dashboard"]').count() === 0, 'operador não vê o painel no menu');
+check(await page.locator('a[href="/conferencia"]').count() === 1, 'operador vê a conferência de fichas no menu');
 await page.goto(APP + '/dashboard');
 await page.waitForURL(/\/pdv/);
 check(true, 'operador redirecionado do /dashboard para /pdv');
