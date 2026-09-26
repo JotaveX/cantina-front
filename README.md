@@ -1,7 +1,7 @@
 # Cantina (frontend)
 
-Interface web do sistema da cantina escolar: ponto de venda com leitor de código de barras, retirada no balcão,
-cadastros, estoque, conta do aluno, relatórios e painel do dia.
+Interface web do sistema da cantina escolar: ponto de venda com leitor de código de barras, conferência de fichas e caixa,
+cadastros, estoque, conta do aluno, relatórios e painel (home do ADMIN).
 
 - Angular 22 (componentes standalone, signals, zoneless), formulários reativos
 - Sem biblioteca de UI: estilos próprios em `src/styles.scss`
@@ -35,7 +35,7 @@ prioridade; no balcão o campo aceita só a carteirinha.
 npm test                                   # unitários (vitest)
 ```
 
-O teste de ponta a ponta (Playwright, headless) que percorre login, PDV, retirada, conta do aluno, relatórios e
+O teste de ponta a ponta (Playwright, headless) que percorre login, PDV, conferência de fichas, conta do aluno, relatórios e
 perfis está em `e2e/fluxo-completo.mjs`; veja `e2e/README.md`.
 
 ## Build e deploy (Cloudflare Pages)
@@ -69,11 +69,17 @@ src/app
 ├── shared/      scanner-input, pipe de dinheiro, badges de status, toasts, helpers de data
 ├── layout/      shell com sidebar (menu filtrado por perfil)
 └── features/
-    ├── login, dashboard, pdv, retirada
+    ├── login, dashboard, pdv, conferencia (fichas recolhidas + caixa do dia)
     ├── cadastros/   alunos, turmas, produtos (+categorias), fornecedores, usuários, trocar senha
     ├── estoque/     compras, baixa manual, contagem de sobras
     ├── financeiro/  conta do aluno (extrato + lançamentos), vendas (lista + cancelamento)
-    └── relatorios/  estoque, fichas por produto, carteirinhas, reconciliação, vendas por período, em atraso, fechamento mensal
+    └── relatorios/  estoque, fichas por produto, carteirinhas, reconciliação, vendas por período, em atraso, fechamento mensal,
+                     bilhetes de cobrança (impressão, 8 por folha A4), consumo do aluno
+    └── documentos/  atalho (menu "Documentos") para consumo do aluno (documento impresso para os responsáveis),
+                     bilhetes de cobrança e carteirinhas (frente + verso 20 × 7 cm, 4 por folha A4, papel azul;
+                     Code 128 gerado em shared/code128.ts)
 ```
+
+Configurações (dia do fechamento) ficam na engrenagem ao lado do nome do usuário, não no menu.
 
 Perfis: rotas administrativas usam `adminGuard`; o menu esconde o que o operador não acessa e a API também bloqueia (403).
